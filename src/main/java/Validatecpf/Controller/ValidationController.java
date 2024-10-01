@@ -28,5 +28,7 @@ public class ValidationController {
     }
 
     @GetMapping("/dados")
-    public String
+    public String retornarDados(@RequestBody User body){
+        return "nada";
+    }
 }
