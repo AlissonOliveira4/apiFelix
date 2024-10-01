@@ -1,6 +1,7 @@
 package Validatecpf.Service;
 
 import Validatecpf.Domain.User;
+import Validatecpf.Interface.UserClient;
 import Validatecpf.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,9 @@ public class CreateandValidateCPFUseCase{
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserClient userClient;
 
 
     public boolean cpfValidation(long CPF){
@@ -109,13 +113,38 @@ public class CreateandValidateCPFUseCase{
         //Verificando se o retorno do método é igual ao cpf do body da requisição
         if (cpf == body.getCpf()) {
             return "User encontrado!";
+
         } else {
             if (cpfValidation(body.getCpf())) {
+                body.setValid(true);
                 //Insert no banco
                 save(body);
                 return "CPF válido. User criado!";
             } else {
-                return "CPF inválido!";
+                body.setValid(false);
+                //Insert no banco
+                save(body);
+                return "CPF inválido! User criado!";
+            }
+        }
+    }
+
+    public String enderecoRetorno(User body){
+        long cpf = 0;
+        User user = fetchByCPF(body.getCpf());
+        //Verificando se retornou algo no método de busca do repository
+        if (user != null) {
+            cpf = user.getCpf();
+        }
+        //Verificando se o retorno do método é igual ao cpf do body da requisição
+        if (cpf == body.getCpf()) {
+            return "User encontrado!";
+
+        } else {
+            if (user.isValid() == true) {
+                return "CPF validado!";//Teste
+            } else {
+                return "CPF não foi validado!";
             }
         }
     }

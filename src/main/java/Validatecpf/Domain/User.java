@@ -12,8 +12,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document
 public class User {
 
-    private String nome;
-
     private long cpf;
+
+    private boolean isValid;
+
+
 
 }
