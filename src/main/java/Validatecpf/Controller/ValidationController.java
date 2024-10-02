@@ -1,7 +1,10 @@
 package Validatecpf.Controller;
 
+import User.viacep.Endereco;
 import Validatecpf.Domain.User;
 import Validatecpf.Service.CreateandValidateCPFUseCase;
+import WireMock.WireMock;
+import feign.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +30,25 @@ public class ValidationController {
         return useCase.Validar(body);
     }
 
-    @GetMapping("/dados")
-    public String retornarDados(@RequestBody User body){
-        return "nada";
+
+    @GetMapping("/endereco")
+    public String retornarEndereco(@RequestBody User body){
+        if (useCase.ValidarExistencia(body).equals("User encontrado!")){
+            WireMock wiremock = useCase.wireMockRetorno(body.getCpf());
+            if (wiremock != null){
+                Endereco endereco = useCase.enderecoRetorno(wiremock.getCEP());
+                if (endereco != null){
+                    return "Endereço certo!";
+                }
+                return "Endereço deu errado!";
+            }
+            return "WireMock não encontrado!";
+        }
+
+
+
+
+
+        return "User não encontrado!";
     }
 }

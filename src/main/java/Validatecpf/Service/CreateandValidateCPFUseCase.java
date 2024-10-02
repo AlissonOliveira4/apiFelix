@@ -1,11 +1,16 @@
 package Validatecpf.Service;
 
+import User.viacep.Endereco;
 import Validatecpf.Domain.User;
-import Validatecpf.Interface.UserClient;
+import Validatecpf.Interface.EnderecoClient;
+import Validatecpf.Interface.WireMockClient;
 import Validatecpf.Repository.UserRepository;
+import WireMock.WireMock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.net.http.HttpResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -15,10 +20,13 @@ public class CreateandValidateCPFUseCase{
     private UserRepository userRepository;
 
     @Autowired
-    private UserClient userClient;
+    private EnderecoClient enderecoClient;
+
+    @Autowired
+    private WireMockClient wireMockClient;
 
 
-    public boolean cpfValidation(long CPF){
+    public boolean cpfValidation(String CPF){
         String cpf = String.valueOf(CPF);
         int digito1;
         int digito2;
@@ -61,7 +69,7 @@ public class CreateandValidateCPFUseCase{
         }
     }
 
-    public User fetchByCPF(long cpf){
+    public User fetchByCPF(String cpf){
         return userRepository.findUserByCpf(cpf);
     }
 
@@ -104,48 +112,54 @@ public class CreateandValidateCPFUseCase{
 
     public String Validar(User body) {
         System.out.println(fetchByCPF(body.getCpf()));
-        long cpf = 0;
         User user = fetchByCPF(body.getCpf());
         //Verificando se retornou algo no método de busca do repository
         if (user != null) {
-            cpf = user.getCpf();
-        }
-        //Verificando se o retorno do método é igual ao cpf do body da requisição
-        if (cpf == body.getCpf()) {
             return "User encontrado!";
-
+        }
+        if (cpfValidation(body.getCpf())) {
+            body.setValid(true);
+            //Insert no banco
+            save(body);
+            return "CPF válido. User criado!";
         } else {
-            if (cpfValidation(body.getCpf())) {
-                body.setValid(true);
-                //Insert no banco
-                save(body);
-                return "CPF válido. User criado!";
-            } else {
-                body.setValid(false);
-                //Insert no banco
-                save(body);
-                return "CPF inválido! User criado!";
-            }
+            body.setValid(false);
+            //Insert no banco
+            save(body);
+            return "CPF inválido! User criado!";
         }
     }
 
-    public String enderecoRetorno(User body){
-        long cpf = 0;
+    //Fluxo 2
+
+    public String ValidarExistencia(User body) {
         User user = fetchByCPF(body.getCpf());
         //Verificando se retornou algo no método de busca do repository
         if (user != null) {
-            cpf = user.getCpf();
-        }
-        //Verificando se o retorno do método é igual ao cpf do body da requisição
-        if (cpf == body.getCpf()) {
-            return "User encontrado!";
-
-        } else {
-            if (user.isValid() == true) {
-                return "CPF validado!";//Teste
-            } else {
-                return "CPF não foi validado!";
+            //Verificando se o retorno do método é igual ao cpf do body da requisição
+            System.out.println(user.getCpf());
+            System.out.println(body.getCpf());
+            if (user.getCpf().equals(body.getCpf())) {
+                return "User encontrado!";
             }
+            return "User não encontrado!";
         }
+        return "User nulo!";
+    }
+
+    public WireMock wireMockRetorno(String cpf){
+        var wiremock = wireMockClient.FetchWireMockByCPF(cpf);
+        if(wiremock != null){
+            return new WireMock(wiremock.getName(), wiremock.getJob(), wiremock.getRG(), wiremock.getCEP(),wiremock.getBirth_date());
+        }
+        return null;
+    }
+
+    public Endereco enderecoRetorno(String cep){
+        var endereco = enderecoClient.getEndereco(cep);
+        if(endereco != null){
+            return new Endereco(endereco.getCep(), endereco.getLogradouro(), endereco.getComplemento(), endereco.getUnidade(), endereco.getBairro(), endereco.getLocalidade(), endereco.getUf(), endereco.getEstado(), endereco.getRegiao(), endereco.getIbge(), endereco.getGia(), endereco.getDdd(), endereco.getSiafi());
+        }
+        return null;
     }
 }

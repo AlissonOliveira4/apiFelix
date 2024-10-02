@@ -1,17 +1,24 @@
 package User.viacep;
 
-public record Endereco() {
-    String cep,
-    String logradouro,
-    String complemento,
-    String unidade,
-    String bairro,
-    String localidade,
-    String uf,
-    String estado,
-    String regiao,
-    int ibge,
-    int gia,
-    int ddd,
-    int siafi
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class Endereco {
+    private String cep;
+    private String logradouro;
+    private String complemento;
+    private String unidade;
+    private String bairro;
+    private String localidade;
+    private String uf;
+    private String estado;
+    private String regiao;
+    private int ibge;
+    private int gia;
+    private int ddd;
+    private int siafi;
 }
