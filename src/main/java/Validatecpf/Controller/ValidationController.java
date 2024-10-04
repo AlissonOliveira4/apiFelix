@@ -4,9 +4,9 @@ import User.viacep.Endereco;
 import Validatecpf.Domain.User;
 import Validatecpf.Service.CreateandValidateCPFUseCase;
 import WireMock.WireMock;
-import feign.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -32,23 +32,23 @@ public class ValidationController {
 
 
     @GetMapping("/endereco")
-    public String retornarEndereco(@RequestBody User body){
+    public ResponseEntity<?> retornarEndereco(@RequestBody User body){
         if (useCase.ValidarExistencia(body).equals("User encontrado!")){
             WireMock wiremock = useCase.wireMockRetorno(body.getCpf());
             if (wiremock != null){
                 Endereco endereco = useCase.enderecoRetorno(wiremock.getCEP());
                 if (endereco != null){
-                    return "Endereço certo!";
+                    return ResponseEntity.status(200).body(endereco);
                 }
-                return "Endereço deu errado!";
+                return ResponseEntity.status(404).body("Endereço deu errado!");
             }
-            return "WireMock não encontrado!";
+            return ResponseEntity.status(404).body("WireMock não encontrado!");
         }
+        return ResponseEntity.status(404).body("User não encontrado!");
+    }
 
-
-
-
-
-        return "User não encontrado!";
+    @GetMapping("/buscar-endereco/{cep}")
+    public ResponseEntity<?> retornarEndereco2(@PathVariable String cep) {
+        return useCase.retornarEndereco2(cep);
     }
 }

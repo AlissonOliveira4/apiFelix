@@ -3,10 +3,12 @@ package User.viacep;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@ToString
 public class Endereco {
     private String cep;
     private String logradouro;
@@ -17,8 +19,8 @@ public class Endereco {
     private String uf;
     private String estado;
     private String regiao;
-    private int ibge;
-    private int gia;
-    private int ddd;
-    private int siafi;
+    private String ibge;
+    private String gia;
+    private String ddd;
+    private String siafi;
 }

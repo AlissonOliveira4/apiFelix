@@ -8,9 +8,10 @@ import Validatecpf.Repository.UserRepository;
 import WireMock.WireMock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.net.http.HttpResponse;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 @RequiredArgsConstructor
@@ -111,7 +112,6 @@ public class CreateandValidateCPFUseCase{
 //    }
 
     public String Validar(User body) {
-        System.out.println(fetchByCPF(body.getCpf()));
         User user = fetchByCPF(body.getCpf());
         //Verificando se retornou algo no método de busca do repository
         if (user != null) {
@@ -137,8 +137,6 @@ public class CreateandValidateCPFUseCase{
         //Verificando se retornou algo no método de busca do repository
         if (user != null) {
             //Verificando se o retorno do método é igual ao cpf do body da requisição
-            System.out.println(user.getCpf());
-            System.out.println(body.getCpf());
             if (user.getCpf().equals(body.getCpf())) {
                 return "User encontrado!";
             }
@@ -148,18 +146,26 @@ public class CreateandValidateCPFUseCase{
     }
 
     public WireMock wireMockRetorno(String cpf){
-        var wiremock = wireMockClient.FetchWireMockByCPF(cpf);
-        if(wiremock != null){
-            return new WireMock(wiremock.getName(), wiremock.getJob(), wiremock.getRG(), wiremock.getCEP(),wiremock.getBirth_date());
-        }
-        return null;
+        return wireMockClient.FetchWireMockByCPF(cpf);
+
     }
 
     public Endereco enderecoRetorno(String cep){
-        var endereco = enderecoClient.getEndereco(cep);
-        if(endereco != null){
-            return new Endereco(endereco.getCep(), endereco.getLogradouro(), endereco.getComplemento(), endereco.getUnidade(), endereco.getBairro(), endereco.getLocalidade(), endereco.getUf(), endereco.getEstado(), endereco.getRegiao(), endereco.getIbge(), endereco.getGia(), endereco.getDdd(), endereco.getSiafi());
+        return enderecoClient.getEndereco(cep);
+    }
+
+
+    public ResponseEntity<?> retornarEndereco2(@PathVariable String cep) {
+        try {
+            Endereco endereco = enderecoClient.getEndereco(cep);
+            System.out.println(endereco);
+            return ResponseEntity.ok(endereco);
+        } catch (Exception e) {
+            // Loga o erro com o stack trace para análise
+            e.printStackTrace();
+            // Retorna uma mensagem de erro sem o stack trace
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erro ao buscar o endereço para o CEP: " + cep);
         }
-        return null;
     }
 }
