@@ -1,32 +1,31 @@
 package Validatecpf.Service;
 
-import User.viacep.Endereco;
+import Validatecpf.Domain.Endereco;
 import Validatecpf.Domain.User;
 import Validatecpf.Interface.EnderecoClient;
 import Validatecpf.Interface.WireMockClient;
 import Validatecpf.Repository.UserRepository;
-import WireMock.WireMock;
+import Validatecpf.Domain.WireMock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class CreateandValidateCPFUseCase{
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private EnderecoClient enderecoClient;
+    private final EnderecoClient enderecoClient;
 
-    @Autowired
-    private WireMockClient wireMockClient;
+    private final WireMockClient wireMockClient;
 
 
-    public boolean cpfValidation(String CPF){
+    public boolean cpfValidation(long CPF){
         String cpf = String.valueOf(CPF);
         int digito1;
         int digito2;
@@ -69,63 +68,30 @@ public class CreateandValidateCPFUseCase{
         }
     }
 
-    public User fetchByCPF(String cpf){
-        return userRepository.findUserByCpf(cpf);
+    public User fetchByCPF(long cpf){
+        try {
+            return userRepository.findUserByCpf(cpf);
+        }catch (NumberFormatException e){
+            return null;
+        }
     }
 
     public User save(User body){
         return userRepository.save(body);
     }
 
-//    public ResponseEntity<String> Validar(User body) {
-//        if (fetchByCPF(body.getCpf()) != body){
-//            if (cpfValidation(body.getCpf())) {
-//                //Insert no banco
-//                save(body);
-//                return ResponseEntity.status(201).body("User criado!");
-//            } else {
-//                return ResponseEntity.status(404).body("User não encontrado!");
-//            }
-//        }
-//        return null;
-//    }
-
-//    public String Validar(User body) {
-//        System.out.println(fetchByCPF(body.getCpf()));
-//        long cpf = 0;
-//        User user = fetchByCPF(body.getCpf());
-//        if (user != null) {
-//            cpf = user.getCpf();
-//        }
-//        if (cpf == body.getCpf()){
-//            return "User encontrado";
-//        } else {
-//            if (cpfValidation(body.getCpf())) {
-//                //Insert no banco
-//                save(body);
-//                return "CPF válido. User criado!";
-//            } else {
-//                return "CPF inválido!";
-//            }
-//        }
-//    }
-
     public String Validar(User body) {
         User user = fetchByCPF(body.getCpf());
-        //Verificando se retornou algo no método de busca do repository
+        //Verificando se retornou algo no metodo de busca do repository
         if (user != null) {
             return "User encontrado!";
         }
         if (cpfValidation(body.getCpf())) {
-            body.setValid(true);
             //Insert no banco
             save(body);
             return "CPF válido. User criado!";
         } else {
-            body.setValid(false);
-            //Insert no banco
-            save(body);
-            return "CPF inválido! User criado!";
+            return "CPF inválido!";
         }
     }
 
@@ -136,7 +102,7 @@ public class CreateandValidateCPFUseCase{
         //Verificando se retornou algo no método de busca do repository
         if (user != null) {
             //Verificando se o retorno do método é igual ao cpf do body da requisição
-            if (user.getCpf().equals(body.getCpf())) {
+            if (Objects.equals(user.getCpf(), body.getCpf())) {
                 return "User encontrado!";
             }
             return "User não encontrado!";
@@ -144,7 +110,7 @@ public class CreateandValidateCPFUseCase{
         return "User nulo!";
     }
 
-    public WireMock wireMockRetorno(String cpf){
+    public WireMock wireMockRetorno(long cpf){
         WireMock wireMock = wireMockClient.FetchWireMockByCPF(cpf);
         if (wireMock.getCEP().equals(wireMockClient.FetchWireMockByCPF(cpf).getCEP())) {
             return wireMock;
@@ -158,6 +124,22 @@ public class CreateandValidateCPFUseCase{
         } return null;
     }
 
+    public ResponseEntity<?> retornarEndereco(User body){
+        if (ValidarExistencia(body).equals("User encontrado!")){
+            WireMock wiremock = wireMockRetorno(body.getCpf());
+            if (wiremock != null) {
+                Endereco endereco = enderecoRetorno(wiremock.getCEP());
+                if (endereco != null) {
+                    return ResponseEntity.status(200).body(endereco);
+                }
+                return ResponseEntity.status(404).body("Endereço deu errado!");
+            }
+            return ResponseEntity.status(404).body("WireMock não encontrado!");
+        }
+        return ResponseEntity.status(404).body("User não encontrado!");
+    }
+
+    //Teste
 
     public ResponseEntity<?> retornarEndereco2(String cep) {
         try {

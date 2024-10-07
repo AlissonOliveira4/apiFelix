@@ -1,4 +1,4 @@
-package WireMock;
+package Validatecpf.Domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,9 +11,11 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class WireMock {
+
     String name;
     String job;
     String RG;
     String CEP;
     String birth_date;
+
 }

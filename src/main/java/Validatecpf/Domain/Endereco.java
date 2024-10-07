@@ -1,4 +1,4 @@
-package User.viacep;
+package Validatecpf.Domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
