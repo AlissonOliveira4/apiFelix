@@ -35,9 +35,9 @@ public class ValidationController {
     public ResponseEntity<?> retornarEndereco(@RequestBody User body){
         if (useCase.ValidarExistencia(body).equals("User encontrado!")){
             WireMock wiremock = useCase.wireMockRetorno(body.getCpf());
-            if (wiremock != null){
+            if (wiremock != null) {
                 Endereco endereco = useCase.enderecoRetorno(wiremock.getCEP());
-                if (endereco != null){
+                if (endereco != null) {
                     return ResponseEntity.status(200).body(endereco);
                 }
                 return ResponseEntity.status(404).body("Endereço deu errado!");

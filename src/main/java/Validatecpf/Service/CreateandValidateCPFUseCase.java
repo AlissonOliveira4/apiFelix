@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 @RequiredArgsConstructor
@@ -146,16 +145,21 @@ public class CreateandValidateCPFUseCase{
     }
 
     public WireMock wireMockRetorno(String cpf){
-        return wireMockClient.FetchWireMockByCPF(cpf);
-
+        WireMock wireMock = wireMockClient.FetchWireMockByCPF(cpf);
+        if (wireMock.getCEP().equals(wireMockClient.FetchWireMockByCPF(cpf).getCEP())) {
+            return wireMock;
+        }return null;
     }
 
     public Endereco enderecoRetorno(String cep){
-        return enderecoClient.getEndereco(cep);
+        Endereco endereco = enderecoClient.getEndereco(cep);
+        if (endereco.getCep().equals(enderecoClient.getEndereco(cep).getCep())) {
+            return endereco;
+        } return null;
     }
 
 
-    public ResponseEntity<?> retornarEndereco2(@PathVariable String cep) {
+    public ResponseEntity<?> retornarEndereco2(String cep) {
         try {
             Endereco endereco = enderecoClient.getEndereco(cep);
             System.out.println(endereco);
