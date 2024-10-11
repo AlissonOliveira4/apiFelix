@@ -10,6 +10,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface WireMockClient {
 
     @GetMapping("/info")
-    WireMock FetchWireMockByCPF(@RequestParam("cpf") long cpf);
+    WireMock FetchWireMockByCPF(@RequestParam("cpf") Long cpf);
 
 }

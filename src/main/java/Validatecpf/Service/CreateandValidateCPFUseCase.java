@@ -2,31 +2,30 @@ package Validatecpf.Service;
 
 import Validatecpf.Domain.Endereco;
 import Validatecpf.Domain.User;
+
+import Validatecpf.Exceptions.HttpMessageNotReadableException;
+import Validatecpf.Exceptions.NotFoundException;
 import Validatecpf.Interface.EnderecoClient;
 import Validatecpf.Interface.WireMockClient;
-import Validatecpf.Repository.UserRepository;
+import Validatecpf.Port.UserInputPort;
+import Validatecpf.Port.UserOutputPort;
 import Validatecpf.Domain.WireMock;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-
 @Service
 @RequiredArgsConstructor
-public class CreateandValidateCPFUseCase{
+public class CreateandValidateCPFUseCase implements UserInputPort {
 
-    private final UserRepository userRepository;
+    private final UserOutputPort userOutputPort;
 
     private final EnderecoClient enderecoClient;
 
     private final WireMockClient wireMockClient;
 
 
-    public boolean cpfValidation(long CPF){
-        String cpf = String.valueOf(CPF);
+    public boolean cpfValidation(String cpf) {
         int digito1;
         int digito2;
         // Verifica se o CPF tem 11 dígitos
@@ -63,95 +62,121 @@ public class CreateandValidateCPFUseCase{
             // Verifica os dígitos verificadores
             return digito1 == Character.getNumericValue(cpf.charAt(9)) &&
                     digito2 == Character.getNumericValue(cpf.charAt(10));
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException ex) {
             return false; // CPF contém caracteres inválidos
         }
     }
 
-    public User fetchByCPF(long cpf){
+    public Long StringtoLong(String cpf){
         try {
-            return userRepository.findUserByCpf(cpf);
-        }catch (NumberFormatException e){
-            return null;
+            Long cpf2 = Long.valueOf(cpf);
+            if (cpf2 == 0) {
+                throw new NullPointerException("Algo está errado com o que você digitou! StringtoLong");
+            }
+            return cpf2;
+        }catch (NumberFormatException ex){
+            throw new NumberFormatException("Digite apenas números inteiros!");
+        } catch (HttpMessageNotReadableException ex){
+            throw new HttpMessageNotReadableException("Erro no parsing de JSON!");
         }
-    }
-
-    public User save(User body){
-        return userRepository.save(body);
     }
 
     public String Validar(User body) {
-        User user = fetchByCPF(body.getCpf());
-        //Verificando se retornou algo no metodo de busca do repository
-        if (user != null) {
-            return "User encontrado!";
-        }
-        if (cpfValidation(body.getCpf())) {
-            //Insert no banco
-            save(body);
-            return "CPF válido. User criado!";
-        } else {
-            return "CPF inválido!";
+        try {
+            User user = userOutputPort.fetchByCPF(StringtoLong(body.getCpf()));
+            System.out.println(user);
+            //Verificando se retornou algo no metodo de busca do repository
+            if (user != null) {
+                return "User encontrado!";
+            }
+            if (cpfValidation(body.getCpf())) {
+                //Insert no banco
+                userOutputPort.save(body);
+                return "CPF válido. User criado!";
+            } else {
+                return "CPF inválido!";
+            }
+        }catch (HttpMessageNotReadableException ex){
+            throw new HttpMessageNotReadableException("Erro no parsing de JSON!");
         }
     }
 
     //Fluxo 2
 
     public String ValidarExistencia(User body) {
-        User user = fetchByCPF(body.getCpf());
-        //Verificando se retornou algo no método de busca do repository
-        if (user != null) {
+        try{
+            User user = userOutputPort.fetchByCPF(StringtoLong(body.getCpf()));
             //Verificando se o retorno do método é igual ao cpf do body da requisição
-            if (Objects.equals(user.getCpf(), body.getCpf())) {
-                return "User encontrado!";
+            if (user != null){
+                if ((user.getCpf()).equals(body.getCpf())) {
+                    return "User encontrado!";
+                }
+                throw new NotFoundException("User não encontrado na Validação!");
             }
-            return "User não encontrado!";
+            return "F";
+        }catch (HttpMessageNotReadableException ex){
+            throw new HttpMessageNotReadableException("Erro no parsing de JSON!");
         }
-        return "User nulo!";
     }
 
-    public WireMock wireMockRetorno(long cpf){
-        WireMock wireMock = wireMockClient.FetchWireMockByCPF(cpf);
-        if (wireMock.getCEP().equals(wireMockClient.FetchWireMockByCPF(cpf).getCEP())) {
+    //Método para captar erro, quando o cpf é null ou 0
+//    private void validarNull(User body){
+//        if (body.getCpf() == null || (body.getCpf() == 0))
+//            throw new NullPointerException("O valor não pode ser null ou 0");
+//    }
+
+    public WireMock wireMockRetorno(Long cpf){
+        try {
+            WireMock wireMock = wireMockClient.FetchWireMockByCPF(cpf);
+            if (wireMock == null) {
+                throw new NotFoundException("Endereco não encontrado! método");
+            }
             return wireMock;
-        }return null;
+        }catch (NullPointerException ex){
+            throw new NullPointerException("Algo está errado com o que você digitou! WireMock");
+        }
+//        WireMock wireMock = wireMockClient.FetchWireMockByCPF(cpf);
+//        if (wireMock.getCEP().equals(wireMockClient.FetchWireMockByCPF(cpf).getCEP())) {
+//            return wireMock;
+//        }return null;
     }
 
     public Endereco enderecoRetorno(String cep){
-        Endereco endereco = enderecoClient.getEndereco(cep);
-        if (endereco.getCep().equals(enderecoClient.getEndereco(cep).getCep())) {
+        try {
+            Endereco endereco = enderecoClient.getEndereco(cep);
+            if (endereco == null) {
+                throw new NotFoundException("Endereco não encontrado! método");
+            }
             return endereco;
-        } return null;
+        }catch (NullPointerException ex){
+            throw new NullPointerException("Algo está errado com o que você digitou! Endereco");
+        }
     }
 
     public ResponseEntity<?> retornarEndereco(User body){
-        if (ValidarExistencia(body).equals("User encontrado!")){
-            WireMock wiremock = wireMockRetorno(body.getCpf());
-            if (wiremock != null) {
-                Endereco endereco = enderecoRetorno(wiremock.getCEP());
-                if (endereco != null) {
-                    return ResponseEntity.status(200).body(endereco);
+        try {
+            if (ValidarExistencia(body).equals("User encontrado!")) {
+                WireMock wiremock = wireMockRetorno(StringtoLong(body.getCpf()));
+                if (wiremock != null) {
+                    Endereco endereco = enderecoRetorno(wiremock.getCEP());
+                    if (endereco != null) {
+                        return ResponseEntity.status(200).body(endereco);
+                    }
+                    throw new NotFoundException("Endereco não encontrado! retorno");
                 }
-                return ResponseEntity.status(404).body("Endereço deu errado!");
+                throw new NotFoundException("WireMock não encontrado! retorno");
             }
-            return ResponseEntity.status(404).body("WireMock não encontrado!");
+            throw new NotFoundException("User não encontrado! retorno");
+        }catch (HttpMessageNotReadableException ex){
+            throw new HttpMessageNotReadableException("Erro no parsing de JSON!");
         }
-        return ResponseEntity.status(404).body("User não encontrado!");
     }
 
     //Teste
 
     public ResponseEntity<?> retornarEndereco2(String cep) {
-        try {
             Endereco endereco = enderecoClient.getEndereco(cep);
             System.out.println(endereco);
             return ResponseEntity.ok(endereco);
-        } catch (Exception e) {
-            // Loga o erro com o stack trace para análise
-            e.printStackTrace();
-            // Retorna uma mensagem de erro sem o stack trace
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro ao buscar o endereço para o CEP: " + cep);
-        }
     }
 }

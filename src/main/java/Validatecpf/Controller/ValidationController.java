@@ -1,9 +1,8 @@
 package Validatecpf.Controller;
 
 import Validatecpf.Domain.User;
-import Validatecpf.Service.CreateandValidateCPFUseCase;
+import Validatecpf.Port.UserInputPort;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,23 +13,22 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/desafio")
 public class ValidationController {
 
-    private final CreateandValidateCPFUseCase useCase;
+    private final UserInputPort user;
 
 
     @PostMapping("/validar")
     public String ValidateCPFPost(@RequestBody User body){
-        return useCase.Validar(body);
+        return user.Validar(body);
     }
 
-
     @GetMapping("/endereco")
-    public ResponseEntity<?> retornarEndereco(@RequestBody User body){
-        return useCase.retornarEndereco(body);
+    public ResponseEntity<?> retornarEndereco(@RequestBody User body) {
+        return user.retornarEndereco(body);
     }
 
     @GetMapping("/buscar-endereco/{cep}")
     public ResponseEntity<?> retornarEndereco2(@PathVariable String cep) {
-        return useCase.retornarEndereco2(cep);
+        return user.retornarEndereco2(cep);
     }
 
 }
